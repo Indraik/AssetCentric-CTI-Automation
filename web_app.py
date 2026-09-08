@@ -5,7 +5,9 @@ The application factory is defined in `app/__init__.py`, and the WSGI runner is 
 This module is retained for backward compatibility with existing scripts and commands.
 """
 
+import os
 from wsgi import app
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    port = int(os.getenv("PORT", "5050"))
+    app.run(debug=True, host="127.0.0.1", port=port)
