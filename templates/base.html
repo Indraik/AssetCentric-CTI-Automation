@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}CTI Platform{% endblock %}</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='common.css') }}">
+  {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+  <div class="bg-layer"></div>
+  <div class="grid-overlay"></div>
+
+  <header class="topbar">
+    <div class="logo">
+      <div class="logo-icon">⬡</div>
+      <span>CTI PLATFORM</span>
+    </div>
+
+    <div class="top-right">
+      <span class="top-title">SECURITY INTELLIGENCE HUB</span>
+      <span class="top-asset">Asset: {{ asset_type | capitalize }}</span>
+      <div class="status-dot">
+        <span class="dot-pulse"></span>
+        SYSTEM READY
+      </div>
+    </div>
+  </header>
+
+  {% block progress_bar %}{% endblock %}
+
+  <main class="main">
+    {% block main %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    <span>ASSET-CENTRIC THREAT INTELLIGENCE PLATFORM</span>
+    <span>SECURITY AUTOMATION</span>
+  </footer>
+
+  <script>
+    (function () {
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        document.querySelectorAll('[data-reveal]').forEach(function (el) {
+          el.classList.add('is-visible');
+        });
+        return;
+      }
+
+      const items = Array.from(document.querySelectorAll('[data-reveal]'));
+      if (!items.length) return;
+
+      const observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) return;
+          const el = entry.target;
+          const delay = Number(el.getAttribute('data-reveal-delay') || 0);
+          window.setTimeout(function () {
+            el.classList.add('is-visible');
+          }, delay);
+          observer.unobserve(el);
+        });
+      }, { threshold: 0.12, rootMargin: '0px 0px -8% 0px' });
+
+      items.forEach(function (el, idx) {
+        if (!el.hasAttribute('data-reveal-delay')) {
+          el.setAttribute('data-reveal-delay', String(Math.min(idx * 35, 220)));
+        }
+        observer.observe(el);
+      });
+    })();
+  </script>
+</body>
+
+</html>

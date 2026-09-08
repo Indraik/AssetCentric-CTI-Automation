@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+
+{% block title %}Asset Configuration — CTI Platform{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='config.css') }}">
+{% endblock %}
+
+{% block progress_bar %}
+<section class="progress-bar-wrap">
+  <div class="progress-inner">
+    <div class="step-item active">
+      <div class="step-circle">1</div>
+      <span>Asset Config</span>
+    </div>
+
+    <div class="step-line"></div>
+
+    <div class="step-item">
+      <div class="step-circle">2</div>
+      <span>Upload Logs</span>
+    </div>
+
+    <div class="step-line"></div>
+
+    <div class="step-item">
+      <div class="step-circle">3</div>
+      <span>Threat Analysis</span>
+    </div>
+
+    <div class="step-line"></div>
+
+    <div class="step-item">
+      <div class="step-circle">4</div>
+      <span>Review</span>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block main %}
+
+<section class="hero" data-reveal>
+
+<div class="hero-badge">
+Step 1 of 4
+</div>
+
+<h1>
+Asset <span>Configuration</span>
+</h1>
+
+<p class="hero-sub">
+Provide details about the asset environment to be analyzed.
+Threat intelligence will be correlated with internal security logs.
+</p>
+
+</section>
+
+
+<!-- MINI METRICS -->
+
+<section class="metrics" data-reveal>
+
+<div class="metric">
+<span>Assets Configured</span>
+<strong>{{ 1 if host else 0 }}</strong>
+</div>
+
+<div class="metric">
+<span>Security Controls</span>
+<strong>{{ enabled_controls | length }}</strong>
+</div>
+
+<div class="metric">
+<span>Active Threat Sources</span>
+<strong>{{ platform_stats.feed.active_sources }}</strong>
+</div>
+
+</section>
+
+
+
+<form method="POST" action="{{ url_for('config') }}" class="config-form" data-reveal>
+
+
+<div class="config-layout">
+
+<!-- LEFT COLUMN -->
+
+<div class="left-col">
+
+<section class="form-card">
+
+<div class="form-card-header">
+
+<div class="fch-icon">🖧</div>
+
+<div>
+<div class="fch-title">Asset Configuration</div>
+<div class="fch-sub">Define asset type and network parameters</div>
+</div>
+
+</div>
+
+
+<div class="form-card-body">
+
+<div class="field-row">
+
+<div class="field-group">
+
+<label>🗄 Asset Type</label>
+
+<select name="asset_type">
+
+<option value="postgresql" {% if asset_type == 'postgresql' %}selected{% endif %}>PostgreSQL</option>
+<option value="mysql" {% if asset_type == 'mysql' %}selected{% endif %}>MySQL</option>
+<option value="redis" {% if asset_type == 'redis' %}selected{% endif %}>Redis</option>
+<option value="mongodb" {% if asset_type == 'mongodb' %}selected{% endif %}>MongoDB</option>
+<option value="elasticsearch" {% if asset_type == 'elasticsearch' %}selected{% endif %}>Elasticsearch</option>
+<option value="custom" {% if asset_type == 'custom' %}selected{% endif %}>Custom</option>
+
+</select>
+
+</div>
+
+
+<div class="field-group">
+
+<label>🔌 Critical Port</label>
+
+<input type="number"
+name="critical_port"
+value="{{ port }}">
+
+</div>
+
+</div>
+
+
+<div class="field-group">
+
+<label>🌐 Asset Subnet</label>
+
+<input type="text"
+name="asset_subnet"
+value="{{ subnet }}"
+placeholder="192.168.1.0/24">
+
+</div>
+
+
+<div class="field-group">
+
+<label>🖥 Hostname / IP</label>
+
+<input type="text"
+name="asset_host"
+value="{{ host }}"
+placeholder="db.internal.corp">
+
+</div>
+
+</div>
+
+</section>
+
+
+
+<section class="form-card">
+
+<div class="form-card-header">
+
+<div class="fch-icon">🛡</div>
+
+<div>
+<div class="fch-title">Security Controls</div>
+<div class="fch-sub">Select enforcement mechanisms</div>
+</div>
+
+</div>
+
+
+<div class="form-card-body">
+
+<label class="toggle">
+
+<input type="checkbox" name="control_firewall" {% if firewall_enabled %}checked{% endif %}>
+
+<span class="slider"></span>
+
+<div class="toggle-text">
+<strong>Firewall</strong>
+<span>Enable firewall enforcement</span>
+</div>
+
+</label>
+
+
+<label class="toggle">
+
+<input type="checkbox" name="control_edr" {% if edr_enabled %}checked{% endif %}>
+
+<span class="slider"></span>
+
+<div class="toggle-text">
+<strong>EDR</strong>
+<span>Endpoint detection integration</span>
+</div>
+
+</label>
+
+
+<label class="toggle">
+
+<input type="checkbox" name="control_siem" {% if siem_enabled %}checked{% endif %}>
+
+<span class="slider"></span>
+
+<div class="toggle-text">
+<strong>SIEM</strong>
+<span>Forward logs to SIEM</span>
+</div>
+
+</label>
+
+</div>
+
+</section>
+
+</div>
+
+
+<!-- RIGHT COLUMN -->
+
+<div class="right-col">
+
+<section class="side-card">
+
+<h3>Security Profile</h3>
+
+<div class="side-item">
+<span>Asset Type</span>
+<strong>{{ asset_type | capitalize }}</strong>
+</div>
+
+<div class="side-item">
+<span>Critical Port</span>
+<strong>{{ port }}</strong>
+</div>
+
+<div class="side-item">
+<span>Protection</span>
+<strong>{{ enabled_controls | join(', ') or 'None' }}</strong>
+</div>
+
+<div class="side-item">
+<span>Latest Correlation Matches</span>
+<strong>{{ platform_stats.correlation.matches }}</strong>
+</div>
+
+</section>
+
+
+
+<section class="side-card">
+
+<h3>Configuration Summary</h3>
+
+{% set enabled_controls = [] %}
+{% if firewall_enabled %}{% set _ = enabled_controls.append('Firewall') %}{% endif %}
+{% if edr_enabled %}{% set _ = enabled_controls.append('EDR') %}{% endif %}
+{% if siem_enabled %}{% set _ = enabled_controls.append('SIEM') %}{% endif %}
+
+<ul class="summary">
+
+<li>Asset: {{ asset_type | capitalize }}</li>
+<li>Port: {{ port }}</li>
+<li>Subnet: {{ subnet }}</li>
+<li>Security Controls: {{ enabled_controls | join(', ') or 'None' }}</li>
+
+</ul>
+
+</section>
+
+</div>
+
+</div>
+
+
+
+<div class="form-actions" data-reveal>
+
+<a href="/" class="btn-back">← Back</a>
+
+<button type="submit" class="next-btn">
+Analyze Logs →
+</button>
+
+</div>
+
+</form>
+
+
+{% endblock %}

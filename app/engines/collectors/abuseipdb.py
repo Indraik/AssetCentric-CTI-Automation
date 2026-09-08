@@ -1,22 +1,22 @@
+from typing import Any, Dict, List
 import requests
 
-from config.api_keys import ABUSEIPDB_API_KEY, abuseipdb_api_key_configured
-from config.settings import ABUSEIPDB_API_URL, MAX_INDICATORS_PER_FEED
-from utils.logger import setup_logger
+from app.core.config import Config
+from app.core.logger import setup_logger
 
-logger = setup_logger()
+logger = setup_logger("AbuseIPDBCollector")
 
 
-def collect_abuseipdb():
-
+def collect_abuseipdb() -> List[Dict[str, Any]]:
+    """Collect malicious IP addresses from AbuseIPDB API."""
     logger.info("AbuseIPDB Collector | Starting collection")
 
-    if not abuseipdb_api_key_configured():
+    if not Config.is_abuseipdb_configured():
         logger.warning("AbuseIPDB Collector | ABUSEIPDB_API_KEY is not configured; skipping feed")
         return []
 
     headers = {
-        "Key": ABUSEIPDB_API_KEY,
+        "Key": Config.ABUSEIPDB_API_KEY,
         "Accept": "application/json"
     }
 
@@ -27,20 +27,16 @@ def collect_abuseipdb():
     indicators = []
 
     try:
-
         response = requests.get(
-            ABUSEIPDB_API_URL,
+            Config.ABUSEIPDB_API_URL,
             headers=headers,
             params=params,
             timeout=10
         )
-
         response.raise_for_status()
-
         data = response.json()
 
-        for entry in data.get("data", [])[:MAX_INDICATORS_PER_FEED]:
-
+        for entry in data.get("data", [])[:Config.MAX_INDICATORS_PER_FEED]:
             indicators.append({
                 "indicator": entry["ipAddress"],
                 "type": "ip",
@@ -50,7 +46,6 @@ def collect_abuseipdb():
         logger.info(f"AbuseIPDB Collector | Indicators collected: {len(indicators)}")
 
     except Exception as e:
-
         logger.error(f"AbuseIPDB Collector | Error: {str(e)}")
 
     return indicators

@@ -1,0 +1,344 @@
+{% extends "base.html" %}
+
+{% block title %}Threat Intelligence Review — CTI Platform{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+{% endblock %}
+
+{% block progress_bar %}
+<section class="progress-bar-wrap">
+  <div class="progress-inner">
+    <div class="step-item completed">
+      <div class="step-circle">1</div>
+      <span>Asset Config</span>
+    </div>
+
+    <div class="step-line"></div>
+
+    <div class="step-item completed">
+      <div class="step-circle">2</div>
+      <span>Upload Logs</span>
+    </div>
+
+    <div class="step-line"></div>
+
+    <div class="step-item completed">
+      <div class="step-circle">3</div>
+      <span>Threat Analysis</span>
+    </div>
+
+    <div class="step-line"></div>
+
+    <div class="step-item active">
+      <div class="step-circle">4</div>
+      <span>Review</span>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block main %}
+
+<section class="hero" data-reveal>
+
+  <div class="hero-badge">Step 4 of 4</div>
+
+  <h1>Threat Intelligence <span>Review</span></h1>
+
+  <p class="hero-sub">
+    Final correlation results and enforcement-ready controls generated for your environment.
+  </p>
+
+  {% if pipeline_last_run %}
+  <p class="hero-sub small">
+    Last analysis run: <strong>{{ pipeline_last_run }}</strong>
+  </p>
+  {% endif %}
+
+</section>
+
+
+<section class="dashboard-risk" data-reveal>
+
+  <div class="risk-banner">
+    <div class="risk-left">
+      <div class="risk-title">{{ asset_type | upper }} ASSET RISK STATUS</div>
+      <div class="risk-meta" id="riskMeta">
+        <div><strong>Asset:</strong> {{ host }}</div>
+        <div><strong>Port:</strong> {{ port }}</div>
+        <div><strong>Threat Level:</strong> <span id="dashThreatLevel">{{ metrics.risk }}</span></div>
+        <div><strong>Last Analysis:</strong> <span id="dashLastAnalysis">{{ pipeline_last_run or 'N/A' }}</span></div>
+        <div><strong>Confidence:</strong> <span id="dashConfidence">{{ threat_score }}</span>%</div>
+      </div>
+
+      <div class="risk-meter">
+        {% set active = metrics.risk %}
+        <div class="meter-row">
+          <span class="meter-label">LOW</span>
+          <div class="meter-track">
+            <div class="meter-pin {% if active == 'LOW' %}active{% endif %}" style="left:10%"></div>
+          </div>
+        </div>
+        <div class="meter-row">
+          <span class="meter-label">MED</span>
+          <div class="meter-track">
+            <div class="meter-pin {% if active == 'MEDIUM' %}active{% endif %}" style="left:50%"></div>
+          </div>
+        </div>
+        <div class="meter-row">
+          <span class="meter-label">HIGH</span>
+          <div class="meter-track">
+            <div class="meter-pin {% if active == 'HIGH' %}active{% endif %}" style="left:90%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="risk-right">
+      <div class="system-title">System Status</div>
+      <div class="detail-row">
+        <div class="detail-label">Threat Feed</div>
+        <div class="detail-value"><span id="dashThreatFeedStatus" class="status-pill {{ 'active' if threat_feed_status == 'ACTIVE' else 'inactive' }}">{{ threat_feed_status }}</span></div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Correlation Engine</div>
+        <div class="detail-value"><span id="dashCorrelationStatus" class="status-pill {{ 'active' if correlation_status == 'SUCCESS' else 'running' if correlation_status == 'RUNNING' else 'inactive' }}">{{ correlation_status }}</span></div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">Pipeline</div>
+        <div class="detail-value"><span id="dashPipelineStatus" class="status-pill {{ 'active' if pipeline_last_run else 'inactive' }}">{{ 'SUCCESS' if pipeline_last_run else 'IDLE' }}</span></div>
+      </div>
+      <div class="detail-row small">
+        <div class="detail-label">Message</div>
+        <div class="detail-value"><span id="dashPipelineMessage" class="status-text">{{ pipeline_message or 'Idle' }}</span></div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<section class="dashboard-metrics" data-reveal>
+  <div class="metric-card">
+    <div class="metric-title">Indicators</div>
+    <div class="metric-value" id="dashMetricIndicators">{{ metrics.indicators }}</div>
+    <div class="metric-sub">Total Collected</div>
+  </div>
+
+  <div class="metric-card">
+    <div class="metric-title">High Confidence</div>
+    <div class="metric-value" id="dashMetricHighConfidence">{{ metrics.high_confidence }}</div>
+    <div class="metric-sub">Verified Threat</div>
+  </div>
+
+  <div class="metric-card">
+    <div class="metric-title">Local Attacks</div>
+    <div class="metric-value" id="dashMetricLocalAttacks">{{ local_attacks }}</div>
+    <div class="metric-sub">From Logs</div>
+  </div>
+
+  <div class="metric-card">
+    <div class="metric-title">Risk Score</div>
+    <div class="metric-value"><span id="dashMetricThreatScore">{{ threat_score }}</span> / 100</div>
+    <div class="metric-sub">{{ asset_type | capitalize }} Risk</div>
+  </div>
+</section>
+
+<section class="dashboard-main" data-reveal>
+  <div class="dashboard-left">
+
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Top Threat Indicators</div>
+          <div class="card-subtitle">Top 5 indicators by severity</div>
+        </div>
+      </div>
+      <div class="card-content">
+        <div class="top-indicators" id="dashTopIndicators">
+          {% if indicators %}
+            {% for ind in indicators[:5] %}
+            <div class="indicator-row">
+              <div class="indicator-cell">
+                <span class="indicator-tag">{{ ind.indicator }}</span>
+                <span class="indicator-type">{{ ind.type | upper }}</span>
+              </div>
+              <div class="indicator-score {{ 'danger' if ind.severity in ['critical', 'high'] else 'warning' if ind.severity == 'medium' else 'ok' }}">{{ ind.confidence | upper }}</div>
+              <div class="indicator-source">{{ ind.sources | join(', ') }}</div>
+              <div class="indicator-action">
+                <a class="pill" href="#">Block</a>
+              </div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="empty">No indicators available yet.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="dashboard-right">
+
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Asset Information</div>
+          <div class="card-subtitle">Deployed protection & network context</div>
+        </div>
+      </div>
+      <div class="card-content info">
+        <div class="detail-row">
+          <div class="detail-label">Asset Type</div>
+          <div class="detail-value">{{ asset_type }}</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">Port</div>
+          <div class="detail-value">{{ port }}</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">Subnet</div>
+          <div class="detail-value">{{ subnet }}</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">Protection</div>
+          <div class="detail-value">{{ ["Firewall" if firewall_enabled else "", "EDR" if edr_enabled else "", "SIEM" if siem_enabled else ""] | select | join(', ') or 'None' }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Pipeline Status</div>
+          <div class="card-subtitle">Automation workflow health</div>
+        </div>
+      </div>
+      <div class="card-content status-list">
+        <div class="detail-row">
+          <div class="detail-label">Threat Feed Collection</div>
+          <div class="detail-value"><span class="status-pill {{ 'active' if sources else 'inactive' }}">{{ 'OK' if sources else 'N/A' }}</span></div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">Data Normalization</div>
+          <div class="detail-value"><span class="status-pill {{ 'active' if pipeline_last_run else 'inactive' }}">{{ 'OK' if pipeline_last_run else 'N/A' }}</span></div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">Correlation Engine</div>
+          <div class="detail-value"><span class="status-pill {{ 'running' if pipeline_running else 'active' if correlation_status == 'SUCCESS' else 'inactive' }}">{{ correlation_status }}</span></div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">Output Generation</div>
+          <div class="detail-value"><span class="status-pill {{ 'active' if correlation_status in ['SUCCESS','RUNNING'] else 'inactive' }}">{{ 'OK' if correlation_status in ['SUCCESS','RUNNING'] else 'N/A' }}</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section class="dashboard-actions-large" data-reveal>
+  <div class="action-card">
+    <div class="action-title">🛡 Firewall Blocklist</div>
+    <a class="action-btn" href="{{ url_for('download_blocklist') }}">Deploy Blocklist</a>
+  </div>
+  <div class="action-card">
+    <div class="action-title">🧬 EDR YARA Rule</div>
+    <a class="action-btn" href="{{ url_for('download_yara') }}">Generate Rule</a>
+  </div>
+  <div class="action-card">
+    <div class="action-title">📦 Threat Feed Export</div>
+    <a class="action-btn" href="{{ url_for('download_threat_feed') }}">Export Feed</a>
+  </div>
+  <div class="action-card">
+    <div class="action-title">📄 Correlation Report</div>
+    <a class="action-btn" href="{{ url_for('download_correlation') }}">Download</a>
+  </div>
+</section>
+
+<script>
+  const dashEls = {
+    indicators: document.getElementById('dashMetricIndicators'),
+    highConfidence: document.getElementById('dashMetricHighConfidence'),
+    localAttacks: document.getElementById('dashMetricLocalAttacks'),
+    threatScore: document.getElementById('dashMetricThreatScore'),
+    threatLevel: document.getElementById('dashThreatLevel'),
+    confidence: document.getElementById('dashConfidence'),
+    lastAnalysis: document.getElementById('dashLastAnalysis'),
+    threatFeedStatus: document.getElementById('dashThreatFeedStatus'),
+    correlationStatus: document.getElementById('dashCorrelationStatus'),
+    pipelineStatus: document.getElementById('dashPipelineStatus'),
+    pipelineMessage: document.getElementById('dashPipelineMessage'),
+    topIndicators: document.getElementById('dashTopIndicators')
+  };
+
+  function statusClass(status) {
+    const val = String(status || '').toUpperCase();
+    if (val === 'RUNNING') return 'running';
+    if (val === 'SUCCESS' || val === 'ACTIVE') return 'active';
+    return 'inactive';
+  }
+
+  function renderTopIndicators(items) {
+    if (!dashEls.topIndicators) return;
+    if (!items || items.length === 0) {
+      dashEls.topIndicators.innerHTML = '<div class="empty">No indicators available yet.</div>';
+      return;
+    }
+
+    dashEls.topIndicators.innerHTML = items.map(ind => {
+      const sev = String(ind.severity || '').toLowerCase();
+      const sevClass = sev === 'critical' || sev === 'high' ? 'danger' : sev === 'medium' ? 'warning' : 'ok';
+      const conf = String(ind.confidence || '').toUpperCase();
+      const sources = (ind.sources || []).join(', ');
+      return `<div class="indicator-row"><div class="indicator-cell"><span class="indicator-tag">${ind.indicator || 'N/A'}</span><span class="indicator-type">${String(ind.type || '').toUpperCase()}</span></div><div class="indicator-score ${sevClass}">${conf}</div><div class="indicator-source">${sources || 'N/A'}</div><div class="indicator-action"><a class="pill" href="#">Block</a></div></div>`;
+    }).join('');
+  }
+
+  async function refreshDashboardCards() {
+    try {
+      const res = await fetch('{{ url_for("live_stats") }}');
+      const data = await res.json();
+      const dash = data.dashboard || {};
+      const metrics = dash.metrics || {};
+      const pipeline = dash.pipeline || {};
+
+      if (dashEls.indicators) dashEls.indicators.textContent = metrics.indicators ?? 0;
+      if (dashEls.highConfidence) dashEls.highConfidence.textContent = metrics.high_confidence ?? 0;
+      if (dashEls.localAttacks) dashEls.localAttacks.textContent = dash.local_attacks ?? 0;
+      if (dashEls.threatScore) dashEls.threatScore.textContent = dash.threat_score ?? 0;
+      if (dashEls.threatLevel) dashEls.threatLevel.textContent = metrics.risk ?? 'LOW';
+      if (dashEls.confidence) dashEls.confidence.textContent = dash.threat_score ?? 0;
+      if (dashEls.lastAnalysis) dashEls.lastAnalysis.textContent = pipeline.last_run || 'N/A';
+
+      if (dashEls.threatFeedStatus) {
+        dashEls.threatFeedStatus.textContent = pipeline.threat_feed_status || 'INACTIVE';
+        dashEls.threatFeedStatus.className = `status-pill ${statusClass(pipeline.threat_feed_status)}`;
+      }
+
+      if (dashEls.correlationStatus) {
+        dashEls.correlationStatus.textContent = pipeline.correlation_status || 'IDLE';
+        dashEls.correlationStatus.className = `status-pill ${statusClass(pipeline.correlation_status)}`;
+      }
+
+      if (dashEls.pipelineStatus) {
+        const pStatus = pipeline.running ? 'RUNNING' : (pipeline.last_run ? 'SUCCESS' : 'IDLE');
+        dashEls.pipelineStatus.textContent = pStatus;
+        dashEls.pipelineStatus.className = `status-pill ${statusClass(pStatus)}`;
+      }
+
+      if (dashEls.pipelineMessage) dashEls.pipelineMessage.textContent = pipeline.message || 'Idle';
+
+      renderTopIndicators(dash.top_indicators || []);
+    } catch (err) {
+      // Keep last rendered values on polling failures.
+    }
+  }
+
+  setInterval(refreshDashboardCards, 5000);
+  refreshDashboardCards();
+</script>
+
+
+{% endblock %}

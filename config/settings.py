@@ -1,3 +1,6 @@
+import os
+
+
 # ==============================
 # Threat Intelligence Settings
 # ==============================
@@ -20,13 +23,22 @@ THREATFOX_FEED_URL = "https://threatfox.abuse.ch/export/json/recent/"
 # File Paths
 # ==============================
 
-RAW_FEED_PATH = "data/raw_threat_feed.json"
+# Resolve paths relative to this config file to avoid issues when the module is used from another working directory
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-NORMALIZED_FEED_PATH = "data/normalized_threat_feed.json"
+DATA_DIR = os.path.join(BASE_DIR, "data")
+LOG_DIR = os.path.join(BASE_DIR, "logs")
+
+RAW_FEED_PATH = os.path.join(DATA_DIR, "raw_threat_feed.json")
+
+NORMALIZED_FEED_PATH = os.path.join(DATA_DIR, "normalized_threat_feed.json")
+
+# User settings persistence (asset/config defaults)
+USER_SETTINGS_PATH = os.path.join(DATA_DIR, "user_settings.json")
 
 
 # ==============================
 # Logging
 # ==============================
 
-LOG_FILE_PATH = "logs/threat_pipeline.log"
+LOG_FILE_PATH = os.path.join(LOG_DIR, "threat_pipeline.log")

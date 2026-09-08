@@ -1,0 +1,61 @@
+[
+    {
+        "indicator": "209.38.35.76",
+        "type": "ip",
+        "severity": "high",
+        "confidence": "medium",
+        "source": [
+            "abuseipdb"
+        ],
+        "matched_field": "src_ip",
+        "status": "MATCH",
+        "log_record": {
+            "timestamp": "2026-03-08 10:00:00",
+            "src_ip": "209.38.35.76",
+            "dst_ip": "192.168.1.5",
+            "dst_port": "5432"
+        }
+    },
+    {
+        "status": "NO_MATCH",
+        "log_record": {
+            "timestamp": "2026-03-08 10:05:00",
+            "src_ip": "8.8.8.8",
+            "dst_ip": "192.168.1.5",
+            "dst_port": "80"
+        }
+    },
+    {
+        "status": "NO_MATCH",
+        "log_record": {
+            "timestamp": "2026-03-08 10:10:00",
+            "domain": "malicious-site.com",
+            "client_ip": "192.168.1.10"
+        }
+    },
+    {
+        "status": "NO_MATCH",
+        "log_record": {
+            "timestamp": "2026-03-08 10:11:00",
+            "domain": "google.com",
+            "client_ip": "192.168.1.11"
+        }
+    },
+    {
+        "status": "NO_MATCH",
+        "log_record": {
+            "timestamp": "2026-03-08 10:12:00",
+            "file_hash": "44d88612fea8a8f36de82e1278abb02f",
+            "process": "malware.exe"
+        }
+    },
+    {
+        "status": "MATCH",
+        "log_record": {
+            "timestamp": "2026-03-08 10:12:00",
+            "file_hash": "44d88612fea8a8f36de82e1278abb02f",
+            "process": "malware.exe"
+        }
+    }
+
+]
