@@ -1,4 +1,10 @@
-.\.venv\Scripts\python.exe web_app.py# SOC Intelligence Automation (CTI)
+# AssetCentric Threat Intelligence Automation (CTI)
+
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Render-00ff88?style=for-the-badge&logo=render&logoColor=0b111e)](https://cti-automation-platform.onrender.com/)
+[![Python](https://img.shields.io/badge/Python-3.11-06b6d4?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![Flask](https://img.shields.io/badge/Flask-3.x-ffffff?style=for-the-badge&logo=flask&logoColor=0b111e)](https://flask.palletsprojects.com/)
+
+> 🌐 **Live Application**: [https://cti-automation-platform.onrender.com/](https://cti-automation-platform.onrender.com/)
 
 An asset-centric Cyber Threat Intelligence (CTI) web platform that collects external threat indicators, normalizes and enriches them, correlates them with uploaded internal security logs, and automatically generates enforcement-ready outputs (firewall blocklists, firewall rules, YARA rules, and correlation artifacts).
 
@@ -220,13 +226,14 @@ git push -u origin main
 
 ## Deployment to Render
 
-This project is prepared for deployment to [Render](https://render.com/) as a Python Web Service.
+The application is deployed and live on Render:
+👉 **[https://cti-automation-platform.onrender.com/](https://cti-automation-platform.onrender.com/)**
 
 ### Option 1: Blueprints (Recommended)
 This repository includes a `render.yaml` blueprint file that automatically configures the web service on Render.
-1. Connect your GitHub/GitLab account to Render.
+1. Connect your GitHub account to Render.
 2. Select **Blueprints** from the Render Dashboard.
-3. Click **New Blueprint Instance** and select your repository.
+3. Click **New Blueprint Instance** and select your repository (`Indraik/AssetCentric-CTI-Automation`).
 4. Render will read the `render.yaml` configuration and deploy the app automatically.
 5. In the Render Dashboard, you can configure your `ABUSEIPDB_API_KEY` environment variable if desired.
 
@@ -237,10 +244,10 @@ If you prefer to configure the Web Service manually:
 3. Use the following settings:
    - **Environment**: `Python`
    - **Build Command**: `pip install -r requirements.txt`
-   - **Start Command**: `gunicorn web_app:app`
+   - **Start Command**: `gunicorn wsgi:app` (or `gunicorn app:app`)
 4. In the **Environment** settings of the service, add the following variables:
-   - `PYTHON_VERSION`: `3.10.13` (or your preferred version)
-   - `FLASK_SECRET_KEY`: A secure random secret key (e.g. generated via `openssl rand -hex 24`).
+   - `PYTHON_VERSION`: `3.11.9`
+   - `FLASK_SECRET_KEY`: A secure random secret key (generated automatically or via Render).
    - `ABUSEIPDB_API_KEY`: (Optional) Your AbuseIPDB API key.
 
 ## Output Artifacts
