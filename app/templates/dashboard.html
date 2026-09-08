@@ -9,26 +9,26 @@
 {% block progress_bar %}
 <section class="progress-bar-wrap">
   <div class="progress-inner">
-    <div class="step-item completed">
-      <div class="step-circle">1</div>
+    <div class="step-item done">
+      <div class="step-circle">✓</div>
       <span>Asset Config</span>
     </div>
 
-    <div class="step-line"></div>
+    <div class="step-line active"></div>
 
-    <div class="step-item completed">
-      <div class="step-circle">2</div>
+    <div class="step-item done">
+      <div class="step-circle">✓</div>
       <span>Upload Logs</span>
     </div>
 
-    <div class="step-line"></div>
+    <div class="step-line active"></div>
 
-    <div class="step-item completed">
-      <div class="step-circle">3</div>
+    <div class="step-item done">
+      <div class="step-circle">✓</div>
       <span>Threat Analysis</span>
     </div>
 
-    <div class="step-line"></div>
+    <div class="step-line active"></div>
 
     <div class="step-item active">
       <div class="step-circle">4</div>
@@ -41,34 +41,28 @@
 {% block main %}
 
 <section class="hero" data-reveal>
-
   <div class="hero-badge">Step 4 of 4</div>
-
   <h1>Threat Intelligence <span>Review</span></h1>
-
   <p class="hero-sub">
-    Final correlation results and enforcement-ready controls generated for your environment.
+    Final cross-correlation results, live threat posture, and automated enforcement controls for your environment.
   </p>
-
   {% if pipeline_last_run %}
   <p class="hero-sub small">
     Last analysis run: <strong>{{ pipeline_last_run }}</strong>
   </p>
   {% endif %}
-
 </section>
 
-
+<!-- Risk Banner -->
 <section class="dashboard-risk" data-reveal>
-
   <div class="risk-banner">
     <div class="risk-left">
       <div class="risk-title">{{ asset_type | upper }} ASSET RISK STATUS</div>
       <div class="risk-meta" id="riskMeta">
         <div><strong>Asset:</strong> {{ host }}</div>
-        <div><strong>Port:</strong> {{ port }}</div>
-        <div><strong>Threat Level:</strong> <span id="dashThreatLevel">{{ metrics.risk }}</span></div>
-        <div><strong>Last Analysis:</strong> <span id="dashLastAnalysis">{{ pipeline_last_run or 'N/A' }}</span></div>
+        <div><strong>Critical Port:</strong> {{ port }}</div>
+        <div><strong>Threat Level:</strong> <span id="dashThreatLevel" class="risk-badge {{ metrics.risk | lower }}">{{ metrics.risk }}</span></div>
+        <div><strong>Local Incidents:</strong> <span id="dashLocalIncidents">{{ local_attacks }} matches</span></div>
         <div><strong>Confidence:</strong> <span id="dashConfidence">{{ threat_score }}</span>%</div>
       </div>
 
@@ -96,9 +90,9 @@
     </div>
 
     <div class="risk-right">
-      <div class="system-title">System Status</div>
+      <div class="system-title">Automation Status</div>
       <div class="detail-row">
-        <div class="detail-label">Threat Feed</div>
+        <div class="detail-label">External Feeds</div>
         <div class="detail-value"><span id="dashThreatFeedStatus" class="status-pill {{ 'active' if threat_feed_status == 'ACTIVE' else 'inactive' }}">{{ threat_feed_status }}</span></div>
       </div>
       <div class="detail-row">
@@ -115,77 +109,101 @@
       </div>
     </div>
   </div>
-
 </section>
 
+<!-- KPI Cards + Radial Threat Score Gauge -->
 <section class="dashboard-metrics" data-reveal>
   <div class="metric-card">
     <div class="metric-title">Indicators</div>
     <div class="metric-value" id="dashMetricIndicators">{{ metrics.indicators }}</div>
-    <div class="metric-sub">Total Collected</div>
+    <div class="metric-sub">Total Collected IOCs</div>
   </div>
 
   <div class="metric-card">
     <div class="metric-title">High Confidence</div>
     <div class="metric-value" id="dashMetricHighConfidence">{{ metrics.high_confidence }}</div>
-    <div class="metric-sub">Verified Threat</div>
+    <div class="metric-sub">Multi-Sourced Threats</div>
   </div>
 
   <div class="metric-card">
     <div class="metric-title">Local Attacks</div>
     <div class="metric-value" id="dashMetricLocalAttacks">{{ local_attacks }}</div>
-    <div class="metric-sub">From Logs</div>
+    <div class="metric-sub">Matched Internal Logs</div>
   </div>
 
-  <div class="metric-card">
-    <div class="metric-title">Risk Score</div>
-    <div class="metric-value"><span id="dashMetricThreatScore">{{ threat_score }}</span> / 100</div>
-    <div class="metric-sub">{{ asset_type | capitalize }} Risk</div>
+  <!-- Radial SVG Threat Gauge -->
+  <div class="metric-card radial-card">
+    <div class="metric-title">Threat Score</div>
+    <div class="radial-gauge-wrap">
+      <svg class="radial-svg" viewBox="0 0 100 100">
+        <circle class="radial-bg" cx="50" cy="50" r="40"></circle>
+        <circle class="radial-bar" id="gaugeCircle" cx="50" cy="50" r="40" stroke-dasharray="251.2" stroke-dashoffset="{{ 251.2 - (251.2 * threat_score / 100) }}"></circle>
+      </svg>
+      <div class="radial-text">
+        <span class="radial-num" id="dashMetricThreatScore">{{ threat_score }}</span>
+        <span class="radial-max">/100</span>
+      </div>
+    </div>
+    <div class="metric-sub" id="gaugePostureText">{{ metrics.risk }} Posture &bull; {{ asset_type | capitalize }}</div>
   </div>
 </section>
 
+<!-- Main Grid -->
 <section class="dashboard-main" data-reveal>
+  <!-- Left: Threat Indicators Table with Search & Filter Tabs -->
   <div class="dashboard-left">
-
     <div class="card">
-      <div class="card-header">
+      <div class="card-header-flex">
         <div>
-          <div class="card-title">Top Threat Indicators</div>
-          <div class="card-subtitle">Top 5 indicators by severity</div>
+          <div class="card-title">Threat Indicators</div>
+          <div class="card-subtitle">Active indicators evaluated against asset</div>
+        </div>
+
+        <div class="filter-tabs">
+          <button type="button" class="tab-btn active" data-filter="all" onclick="setIndicatorFilter('all', this)">All</button>
+          <button type="button" class="tab-btn" data-filter="ip" onclick="setIndicatorFilter('ip', this)">IPs</button>
+          <button type="button" class="tab-btn" data-filter="domain" onclick="setIndicatorFilter('domain', this)">Domains</button>
+          <button type="button" class="tab-btn" data-filter="hash" onclick="setIndicatorFilter('hash', this)">Hashes</button>
         </div>
       </div>
+
+      <!-- Quick Search Bar -->
+      <div class="table-search-bar">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="indicatorSearch" placeholder="Search by indicator, type, severity, or source..." oninput="filterIndicatorRows()">
+      </div>
+
       <div class="card-content">
         <div class="top-indicators" id="dashTopIndicators">
           {% if indicators %}
-            {% for ind in indicators[:5] %}
-            <div class="indicator-row">
+            {% for ind in indicators %}
+            <div class="indicator-row" data-type="{{ ind.type | lower }}">
               <div class="indicator-cell">
                 <span class="indicator-tag">{{ ind.indicator }}</span>
                 <span class="indicator-type">{{ ind.type | upper }}</span>
               </div>
-              <div class="indicator-score {{ 'danger' if ind.severity in ['critical', 'high'] else 'warning' if ind.severity == 'medium' else 'ok' }}">{{ ind.confidence | upper }}</div>
+              <div class="indicator-score {{ 'danger' if ind.severity in ['critical', 'high'] else 'warning' if ind.severity == 'medium' else 'ok' }}">{{ ind.severity | upper }}</div>
               <div class="indicator-source">{{ ind.sources | join(', ') }}</div>
               <div class="indicator-action">
-                <a class="pill" href="#">Block</a>
+                <button type="button" class="pill-btn" onclick="copyIndicator('{{ ind.indicator }}')" title="Copy to clipboard">📋 Copy</button>
               </div>
             </div>
             {% endfor %}
           {% else %}
-            <div class="empty">No indicators available yet.</div>
+            <div class="empty">No indicators available yet. Run analysis to populate.</div>
           {% endif %}
         </div>
       </div>
     </div>
-
   </div>
 
+  <!-- Right: Context & Health -->
   <div class="dashboard-right">
-
     <div class="card">
       <div class="card-header">
         <div>
-          <div class="card-title">Asset Information</div>
-          <div class="card-subtitle">Deployed protection & network context</div>
+          <div class="card-title">Asset Context</div>
+          <div class="card-subtitle">Target host & enabled defenses</div>
         </div>
       </div>
       <div class="card-content info">
@@ -194,15 +212,15 @@
           <div class="detail-value">{{ asset_type }}</div>
         </div>
         <div class="detail-row">
-          <div class="detail-label">Port</div>
+          <div class="detail-label">Critical Port</div>
           <div class="detail-value">{{ port }}</div>
         </div>
         <div class="detail-row">
-          <div class="detail-label">Subnet</div>
+          <div class="detail-label">Subnet Range</div>
           <div class="detail-value">{{ subnet }}</div>
         </div>
         <div class="detail-row">
-          <div class="detail-label">Protection</div>
+          <div class="detail-label">Active Controls</div>
           <div class="detail-value">{{ ["Firewall" if firewall_enabled else "", "EDR" if edr_enabled else "", "SIEM" if siem_enabled else ""] | select | join(', ') or 'None' }}</div>
         </div>
       </div>
@@ -211,53 +229,113 @@
     <div class="card">
       <div class="card-header">
         <div>
-          <div class="card-title">Pipeline Status</div>
-          <div class="card-subtitle">Automation workflow health</div>
+          <div class="card-title">Pipeline Health</div>
+          <div class="card-subtitle">Telemetry & integration state</div>
         </div>
       </div>
       <div class="card-content status-list">
         <div class="detail-row">
-          <div class="detail-label">Threat Feed Collection</div>
+          <div class="detail-label">Feed Ingestion</div>
           <div class="detail-value"><span class="status-pill {{ 'active' if sources else 'inactive' }}">{{ 'OK' if sources else 'N/A' }}</span></div>
         </div>
         <div class="detail-row">
-          <div class="detail-label">Data Normalization</div>
+          <div class="detail-label">Normalization Engine</div>
           <div class="detail-value"><span class="status-pill {{ 'active' if pipeline_last_run else 'inactive' }}">{{ 'OK' if pipeline_last_run else 'N/A' }}</span></div>
         </div>
         <div class="detail-row">
-          <div class="detail-label">Correlation Engine</div>
+          <div class="detail-label">Correlation Matching</div>
           <div class="detail-value"><span class="status-pill {{ 'running' if pipeline_running else 'active' if correlation_status == 'SUCCESS' else 'inactive' }}">{{ correlation_status }}</span></div>
         </div>
         <div class="detail-row">
-          <div class="detail-label">Output Generation</div>
+          <div class="detail-label">Rule Generator</div>
           <div class="detail-value"><span class="status-pill {{ 'active' if correlation_status in ['SUCCESS','RUNNING'] else 'inactive' }}">{{ 'OK' if correlation_status in ['SUCCESS','RUNNING'] else 'N/A' }}</span></div>
         </div>
       </div>
     </div>
-
   </div>
 </section>
 
+<!-- Large Action Cards with Status Badges -->
 <section class="dashboard-actions-large" data-reveal>
   <div class="action-card">
-    <div class="action-title">🛡 Firewall Blocklist</div>
-    <a class="action-btn" href="{{ url_for('download_blocklist') }}">Deploy Blocklist</a>
+    <div class="action-card-header">
+      <div class="action-title">🛡 Firewall Blocklist</div>
+      <span class="action-badge ready">● Ready</span>
+    </div>
+    <p class="action-desc">Deduplicated CSV of malicious IPs to ingest into firewall.</p>
+    <a class="action-btn" href="{{ url_for('download_blocklist') }}">Download Blocklist</a>
   </div>
+
   <div class="action-card">
-    <div class="action-title">🧬 EDR YARA Rule</div>
-    <a class="action-btn" href="{{ url_for('download_yara') }}">Generate Rule</a>
+    <div class="action-card-header">
+      <div class="action-title">🧬 EDR YARA Rules</div>
+      <span class="action-badge ready">● Ready</span>
+    </div>
+    <p class="action-desc">Compiled YARA rule signature matching detected malware hashes.</p>
+    <a class="action-btn" href="{{ url_for('download_yara') }}">Download YARA</a>
   </div>
+
   <div class="action-card">
-    <div class="action-title">📦 Threat Feed Export</div>
-    <a class="action-btn" href="{{ url_for('download_threat_feed') }}">Export Feed</a>
+    <div class="action-card-header">
+      <div class="action-title">📦 Threat Feed Export</div>
+      <span class="action-badge ready">● Ready</span>
+    </div>
+    <p class="action-desc">Normalized JSON feed with enriched metadata and reliability scores.</p>
+    <a class="action-btn" href="{{ url_for('download_threat_feed') }}">Export JSON Feed</a>
   </div>
+
   <div class="action-card">
-    <div class="action-title">📄 Correlation Report</div>
-    <a class="action-btn" href="{{ url_for('download_correlation') }}">Download</a>
+    <div class="action-card-header">
+      <div class="action-title">📄 Correlation Report</div>
+      <span class="action-badge ready">● Ready</span>
+    </div>
+    <p class="action-desc">Audit trail report containing matched and unmatched log records.</p>
+    <a class="action-btn" href="{{ url_for('download_correlation') }}">Download Report</a>
   </div>
 </section>
 
 <script>
+  let currentFilter = 'all';
+
+  function copyIndicator(val) {
+    if (!val) return;
+    navigator.clipboard.writeText(val).then(() => {
+      if (window.showToast) {
+        window.showToast('Copied to clipboard: ' + val);
+      }
+    }).catch(() => {
+      if (window.showToast) {
+        window.showToast('Failed to copy', true);
+      }
+    });
+  }
+
+  function setIndicatorFilter(filterType, btn) {
+    currentFilter = filterType;
+    document.querySelectorAll('.filter-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    filterIndicatorRows();
+  }
+
+  function filterIndicatorRows() {
+    const searchVal = (document.getElementById('indicatorSearch')?.value || '').toLowerCase().trim();
+    const rows = document.querySelectorAll('#dashTopIndicators .indicator-row');
+
+    rows.forEach(row => {
+      const rowType = (row.getAttribute('data-type') || '').toLowerCase();
+      const text = row.textContent.toLowerCase();
+
+      const matchesType = (currentFilter === 'all') || (rowType === currentFilter);
+      const matchesSearch = !searchVal || text.includes(searchVal);
+
+      if (matchesType && matchesSearch) {
+        row.style.display = 'flex';
+      } else {
+        row.style.display = 'none';
+      }
+    });
+  }
+
   const dashEls = {
     indicators: document.getElementById('dashMetricIndicators'),
     highConfidence: document.getElementById('dashMetricHighConfidence'),
@@ -270,14 +348,27 @@
     correlationStatus: document.getElementById('dashCorrelationStatus'),
     pipelineStatus: document.getElementById('dashPipelineStatus'),
     pipelineMessage: document.getElementById('dashPipelineMessage'),
-    topIndicators: document.getElementById('dashTopIndicators')
+    topIndicators: document.getElementById('dashTopIndicators'),
+    gaugeCircle: document.getElementById('gaugeCircle'),
+    localIncidents: document.getElementById('dashLocalIncidents'),
   };
 
-  function statusClass(status) {
-    const val = String(status || '').toUpperCase();
-    if (val === 'RUNNING') return 'running';
-    if (val === 'SUCCESS' || val === 'ACTIVE') return 'active';
-    return 'inactive';
+  function updateRadialGauge(score) {
+    if (!dashEls.gaugeCircle) return;
+    const radius = 40;
+    const circumference = 2 * Math.PI * radius; // 251.2
+    const safeScore = Math.max(0, Math.min(100, Number(score) || 0));
+    const offset = circumference - (circumference * safeScore / 100);
+    dashEls.gaugeCircle.style.strokeDashoffset = offset;
+
+    // Adjust gauge stroke color based on threat score
+    if (safeScore >= 70) {
+      dashEls.gaugeCircle.style.stroke = '#ff4d4d';
+    } else if (safeScore >= 35) {
+      dashEls.gaugeCircle.style.stroke = '#ffb020';
+    } else {
+      dashEls.gaugeCircle.style.stroke = '#0bc971';
+    }
   }
 
   function renderTopIndicators(items) {
@@ -290,10 +381,23 @@
     dashEls.topIndicators.innerHTML = items.map(ind => {
       const sev = String(ind.severity || '').toLowerCase();
       const sevClass = sev === 'critical' || sev === 'high' ? 'danger' : sev === 'medium' ? 'warning' : 'ok';
-      const conf = String(ind.confidence || '').toUpperCase();
+      const indType = String(ind.type || 'ip').toLowerCase();
       const sources = (ind.sources || []).join(', ');
-      return `<div class="indicator-row"><div class="indicator-cell"><span class="indicator-tag">${ind.indicator || 'N/A'}</span><span class="indicator-type">${String(ind.type || '').toUpperCase()}</span></div><div class="indicator-score ${sevClass}">${conf}</div><div class="indicator-source">${sources || 'N/A'}</div><div class="indicator-action"><a class="pill" href="#">Block</a></div></div>`;
+      return `
+        <div class="indicator-row" data-type="${indType}">
+          <div class="indicator-cell">
+            <span class="indicator-tag">${ind.indicator || 'N/A'}</span>
+            <span class="indicator-type">${indType.toUpperCase()}</span>
+          </div>
+          <div class="indicator-score ${sevClass}">${(ind.severity || 'LOW').toUpperCase()}</div>
+          <div class="indicator-source">${sources || 'N/A'}</div>
+          <div class="indicator-action">
+            <button type="button" class="pill-btn" onclick="copyIndicator('${ind.indicator}')" title="Copy">📋 Copy</button>
+          </div>
+        </div>`;
     }).join('');
+
+    filterIndicatorRows();
   }
 
   async function refreshDashboardCards() {
@@ -307,38 +411,43 @@
       if (dashEls.indicators) dashEls.indicators.textContent = metrics.indicators ?? 0;
       if (dashEls.highConfidence) dashEls.highConfidence.textContent = metrics.high_confidence ?? 0;
       if (dashEls.localAttacks) dashEls.localAttacks.textContent = dash.local_attacks ?? 0;
+      if (dashEls.localIncidents) dashEls.localIncidents.textContent = (dash.local_attacks ?? 0) + ' matches';
       if (dashEls.threatScore) dashEls.threatScore.textContent = dash.threat_score ?? 0;
-      if (dashEls.threatLevel) dashEls.threatLevel.textContent = metrics.risk ?? 'LOW';
       if (dashEls.confidence) dashEls.confidence.textContent = dash.threat_score ?? 0;
+      if (dashEls.threatLevel) {
+        dashEls.threatLevel.textContent = metrics.risk ?? 'LOW';
+        dashEls.threatLevel.className = `risk-badge ${(metrics.risk || 'low').toLowerCase()}`;
+      }
       if (dashEls.lastAnalysis) dashEls.lastAnalysis.textContent = pipeline.last_run || 'N/A';
+
+      updateRadialGauge(dash.threat_score ?? 0);
 
       if (dashEls.threatFeedStatus) {
         dashEls.threatFeedStatus.textContent = pipeline.threat_feed_status || 'INACTIVE';
-        dashEls.threatFeedStatus.className = `status-pill ${statusClass(pipeline.threat_feed_status)}`;
+        dashEls.threatFeedStatus.className = `status-pill ${pipeline.threat_feed_status === 'ACTIVE' ? 'active' : 'inactive'}`;
       }
 
       if (dashEls.correlationStatus) {
         dashEls.correlationStatus.textContent = pipeline.correlation_status || 'IDLE';
-        dashEls.correlationStatus.className = `status-pill ${statusClass(pipeline.correlation_status)}`;
+        dashEls.correlationStatus.className = `status-pill ${pipeline.correlation_status === 'SUCCESS' ? 'active' : pipeline.correlation_status === 'RUNNING' ? 'running' : 'inactive'}`;
       }
 
       if (dashEls.pipelineStatus) {
         const pStatus = pipeline.running ? 'RUNNING' : (pipeline.last_run ? 'SUCCESS' : 'IDLE');
         dashEls.pipelineStatus.textContent = pStatus;
-        dashEls.pipelineStatus.className = `status-pill ${statusClass(pStatus)}`;
+        dashEls.pipelineStatus.className = `status-pill ${pStatus === 'SUCCESS' || pStatus === 'ACTIVE' ? 'active' : pStatus === 'RUNNING' ? 'running' : 'inactive'}`;
       }
 
       if (dashEls.pipelineMessage) dashEls.pipelineMessage.textContent = pipeline.message || 'Idle';
 
-      renderTopIndicators(dash.top_indicators || []);
-    } catch (err) {
-      // Keep last rendered values on polling failures.
-    }
+      if (dash.top_indicators && dash.top_indicators.length > 0) {
+        renderTopIndicators(dash.top_indicators);
+      }
+    } catch (err) {}
   }
 
-  setInterval(refreshDashboardCards, 5000);
-  refreshDashboardCards();
+  setInterval(refreshDashboardCards, 6000);
+  updateRadialGauge({{ threat_score }});
 </script>
-
 
 {% endblock %}

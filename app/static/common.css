@@ -174,7 +174,7 @@ PROGRESS BAR
 .progress-bar-wrap{
   display:flex;
   justify-content:center;
-  margin-top:30px;
+  margin-top:24px;
 }
 
 .progress-inner{
@@ -185,6 +185,20 @@ PROGRESS BAR
   color:var(--muted);
 }
 
+.step-item{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  color:var(--muted);
+  font-weight:500;
+  transition:color .25s;
+}
+
+.step-item.active{
+  color:var(--text);
+  font-weight:700;
+}
+
 .step-circle{
   width:28px;
   height:28px;
@@ -193,18 +207,36 @@ PROGRESS BAR
   place-items:center;
   border:1px solid var(--border);
   transition:.25s;
+  font-size:11px;
 }
 
 .step-item.active .step-circle{
   border-color:var(--green);
   color:var(--green);
-  box-shadow:0 0 10px rgba(0,128,64,.5);
+  box-shadow:0 0 12px rgba(0,255,136,.45);
+}
+
+.step-item.done{
+  color:var(--text);
+}
+
+.step-item.done .step-circle{
+  border-color:var(--green);
+  background:rgba(0,255,136,.15);
+  color:var(--green);
+  font-weight:700;
 }
 
 .step-line{
-  width:70px;
-  height:1px;
+  width:60px;
+  height:2px;
   background:var(--border);
+  transition:background .3s;
+}
+
+.step-line.active{
+  background:var(--green);
+  box-shadow:0 0 8px rgba(0,255,136,.35);
 }
 
 /* =========================
@@ -540,3 +572,50 @@ a:focus-visible {
     transform:none !important;
   }
 }
+
+/* =========================
+TOAST NOTIFICATIONS & POLISH
+========================= */
+.toast-container{
+  position:fixed;
+  bottom:24px;
+  right:24px;
+  z-index:9999;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  pointer-events:none;
+}
+
+.toast{
+  pointer-events:auto;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  background:rgba(12,20,36,0.95);
+  border:1px solid rgba(11,201,113,0.5);
+  box-shadow:0 8px 24px rgba(0,0,0,0.5), 0 0 15px rgba(11,201,113,0.2);
+  color:var(--text);
+  padding:12px 18px;
+  border-radius:8px;
+  font-size:13px;
+  backdrop-filter:blur(12px);
+  animation:toastSlideIn 0.25s var(--ease-standard);
+  transition:opacity 0.25s, transform 0.25s;
+}
+
+@keyframes toastSlideIn{
+  from{opacity:0; transform:translateY(12px) scale(0.96);}
+  to{opacity:1; transform:translateY(0) scale(1);}
+}
+
+.toast.toast-hide{
+  opacity:0;
+  transform:translateY(-8px) scale(0.96);
+}
+
+.toast-icon{
+  color:var(--green);
+  font-size:14px;
+}
+

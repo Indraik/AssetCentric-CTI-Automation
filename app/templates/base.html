@@ -37,12 +37,27 @@
     {% block main %}{% endblock %}
   </main>
 
+  <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
   <footer class="footer">
     <span>ASSET-CENTRIC THREAT INTELLIGENCE PLATFORM</span>
     <span>SECURITY AUTOMATION</span>
   </footer>
 
   <script>
+    window.showToast = function(message, isError) {
+      const container = document.getElementById('toastContainer');
+      if (!container) return;
+      const toast = document.createElement('div');
+      toast.className = 'toast' + (isError ? ' error' : '');
+      toast.innerHTML = `<span class="toast-icon">${isError ? '✕' : '✓'}</span><span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.classList.add('toast-hide');
+        setTimeout(() => toast.remove(), 250);
+      }, 3000);
+    };
+
     (function () {
       if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
         document.querySelectorAll('[data-reveal]').forEach(function (el) {
