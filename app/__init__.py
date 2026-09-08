@@ -122,3 +122,7 @@ def create_app(config_class: Type[Config] = Config) -> Flask:
         return {"url_for": smart_url_for}
 
     return app
+
+
+# Default application instance for WSGI servers expecting `app:app`
+app = create_app()
