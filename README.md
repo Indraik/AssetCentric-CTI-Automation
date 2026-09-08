@@ -41,18 +41,21 @@ This project implements a full CTI workflow with a professional SOC-style dashbo
 ## Repository Structure
 Top-level directories and purpose:
 
-- `web_app.py`: Main Flask application and route orchestration.
-- `automation/`: SOC integration pipeline and artifact generation trigger.
-- `threat_intelligence/`: Feed collectors, enrichment, normalization.
-- `correlation/`: Log parsing and threat correlation engine.
-- `security_automation/`: Firewall/YARA/risk/unmatched artifact generators.
-- `templates/`: Jinja2 page templates (`index`, `config`, `upload`, `dashboard`, `base`).
-- `static/`: Shared and page-level CSS.
-- `config/`: App settings and API key config.
-- `data/`: Raw + normalized threat feed and persisted user settings.
-- `uploads/`: Uploaded/converted log files.
-- `outputs/`: Generated rules and reports.
-- `logs/`: Operational and copied log data for troubleshooting.
+- `app/`: Primary application package (Application Factory, Blueprints, Services, Engines, Templates, Static).
+  - `app/core/`: Central configuration (`config.py`), structured logging (`logger.py`), and pipeline state (`state.py`).
+  - `app/routes/`: Blueprint controllers (`views.py`, `analysis.py`, `api.py`, `downloads.py`).
+  - `app/services/`: Application services (`asset_service`, `log_upload_service`, `threat_pipeline_service`, `correlation_service`, `stats_service`).
+  - `app/engines/`: Domain engines:
+    - `collectors/`: AbuseIPDB, URLHaus, and ThreatFox collectors.
+    - `normalizer/`: Indicator normalization and IP geolocation enrichment.
+    - `correlation/`: Multi-vector CSV log parsers and correlation engine.
+    - `generators/`: Firewall blocklist, iptables rules, YARA rules, and risk engine.
+  - `app/templates/`: Jinja2 templates (`index`, `config`, `upload`, `dashboard`, `base`).
+  - `app/static/`: CSS styling and frontend assets.
+- `storage/`: Isolated runtime directories (`data/`, `uploads/`, `outputs/`, `logs/`).
+- `tests/`: Automated test suite (`test_templates.py`, `test_routes.py`, `test_workflow.py`).
+- `wsgi.py`: WSGI entrypoint for development and production (`gunicorn wsgi:app`).
+- `render.yaml`: Blueprint configuration for Render cloud deployment.
 
 ## Functional Workflow
 ### 1. Start Page (`/`)
@@ -65,11 +68,11 @@ Top-level directories and purpose:
 3. Asset subnet
 4. Hostname/IP
 5. Enabled controls (Firewall, EDR, SIEM)
-- Persists user settings to `data/user_settings.json`.
+- Persists user settings to `storage/data/user_settings.json`.
 
 ### 3. Upload Logs (`/upload`)
 - Validates required logs based on selected controls.
-- Saves uploaded files into `uploads/` and copies normalized names for correlation.
+- Saves uploaded files into `storage/uploads/` and copies normalized names for correlation.
 - Marks `logs_uploaded=True` and keeps user on upload page.
 - Does not run intelligence automatically.
 
@@ -90,40 +93,27 @@ Top-level directories and purpose:
 - Auto-refreshes live cards through polling from `/live-stats`.
 
 ## Data Flow Summary
-1. Collectors fetch raw indicators -> `data/raw_threat_feed.json`.
-2. Normalizer groups and enriches indicators -> `data/normalized_threat_feed.json`.
-3. Uploaded logs are parsed from `uploads/*.csv`.
+1. Collectors fetch raw indicators -> `storage/data/raw_threat_feed.json`.
+2. Normalizer groups and enriches indicators -> `storage/data/normalized_threat_feed.json`.
+3. Uploaded logs are parsed from `storage/uploads/*.csv`.
 4. Correlation engine compares indicators vs logs.
-5. Correlation payload -> `outputs/correlation_results.json`.
-6. Rule generators derive firewall/YARA/enforcement artifacts.
+5. Correlation payload -> `storage/outputs/correlation_results.json`.
+6. Rule generators derive firewall/YARA/enforcement artifacts into `storage/outputs/`.
 
 ## Core Modules
 ### Threat Intelligence Layer
-- `threat_intelligence/collector_manager.py`
-	- Runs AbuseIPDB, URLHaus, ThreatFox collectors concurrently.
-- `threat_intelligence/normalizer.py`
-	- Normalizes indicators, assigns confidence/severity, enriches IP metadata.
+- `app/services/threat_pipeline_service.py`: Runs AbuseIPDB, URLHaus, ThreatFox collectors concurrently.
+- `app/engines/normalizer/normalizer.py`: Normalizes indicators, assigns confidence/severity, enriches IP metadata.
 
 ### Correlation Layer
-- `correlation/security_log_parser.py`
-	- Parses firewall, DNS, endpoint CSV logs.
-- `correlation/threat_correlation_engine.py`
-	- Matches:
-1. IP indicators against `src_ip` and `dst_ip`
-2. Domain indicators against DNS logs
-3. Hash indicators against endpoint logs
-	- Adds `NO_MATCH` records for traceability.
+- `app/engines/correlation/log_parser.py`: Parses firewall, DNS, endpoint CSV logs.
+- `app/engines/correlation/correlation_engine.py`: Matches indicators across IP, domain, and hash dimensions.
 
 ### Automation Layer
-- `automation/threat_analysis_service.py`
-	- Orchestrates correlation and artifact generation.
-	- Computes risk and stats from actual match counts.
-- `security_automation/firewall_blocklist_generator.py`
-	- Builds deduplicated blocklist (critical/high/medium severity).
-- `security_automation/iptables_rule_generator.py`
-	- Emits iptables rules from blocklist.
-- `security_automation/yara_generator.py`
-	- Emits YARA rules from matched hashes.
+- `app/services/correlation_service.py`: Orchestrates correlation and artifact generation.
+- `app/engines/generators/blocklist_generator.py`: Builds deduplicated blocklist (critical/high/medium severity).
+- `app/engines/generators/iptables_generator.py`: Emits iptables rules from blocklist.
+- `app/engines/generators/yara_generator.py`: Emits YARA rules from matched hashes.
 
 ## API and Route Reference
 Main user routes:
@@ -170,19 +160,21 @@ $env:FLASK_SECRET_KEY = "replace-with-a-random-secret"
 
 ### Start Application
 ```powershell
-.venv\Scripts\python.exe web_app.py
+python wsgi.py
 ```
+*(Or via backward-compatibility wrapper: `python web_app.py`)*
 
-### Validate Templates
+### Run Automated Tests
 ```powershell
-.venv\Scripts\python.exe template_render_validation.py
+python tests/test_templates.py
+python tests/test_routes.py
+python tests/test_workflow.py
 ```
 
 ## Configuration
 ### API keys
-- File: `config/api_keys.py`
-- Current implementation reads AbuseIPDB API key from the `ABUSEIPDB_API_KEY` environment variable.
-- The repository keeps a fake placeholder value so no real key is committed.
+- Centralized in `app/core/config.py`.
+- Reads AbuseIPDB API key from the `ABUSEIPDB_API_KEY` environment variable.
 
 Recommended improvement:
 - Move secrets to environment variables and never commit real keys.

@@ -106,8 +106,6 @@ def dashboard():
 
     indicators = []
     norm_path = Config.NORMALIZED_FEED_PATH
-    if not os.path.exists(norm_path) and os.path.exists(os.path.join(Config.LEGACY_DATA_DIR, "normalized_threat_feed.json")):
-        norm_path = os.path.join(Config.LEGACY_DATA_DIR, "normalized_threat_feed.json")
 
     if os.path.exists(norm_path):
         try:

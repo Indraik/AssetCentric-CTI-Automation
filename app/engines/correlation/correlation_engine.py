@@ -33,11 +33,7 @@ def load_threat_feed(feed_path: str = None) -> List[Dict[str, Any]]:
     """Load normalized threat feed from storage (or fallback to legacy path)."""
     target_path = feed_path or Config.NORMALIZED_FEED_PATH
     if not os.path.exists(target_path):
-        fallback = os.path.join(Config.LEGACY_DATA_DIR, "normalized_threat_feed.json")
-        if os.path.exists(fallback):
-            target_path = fallback
-        else:
-            return []
+        return []
 
     try:
         with open(target_path, "r", encoding="utf-8") as f:

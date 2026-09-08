@@ -29,13 +29,7 @@ def _safe_load_logs(load_fn, path: str) -> List[Dict[str, Any]]:
 
 
 def _resolve_log_path(filename: str) -> str:
-    primary = os.path.join(Config.UPLOAD_DIR, filename)
-    if os.path.exists(primary):
-        return primary
-    legacy = os.path.join(Config.LEGACY_UPLOAD_DIR, filename)
-    if os.path.exists(legacy):
-        return legacy
-    return primary
+    return os.path.join(Config.UPLOAD_DIR, filename)
 
 
 def run_correlation(user_config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
@@ -64,25 +58,22 @@ def run_correlation(user_config: Optional[Dict[str, Any]] = None) -> Dict[str, A
     }
 
     Config.init_directories()
-    output_dirs = [Config.OUTPUT_DIR, Config.LEGACY_OUTPUT_DIR]
-    for out_dir in output_dirs:
-        try:
-            os.makedirs(out_dir, exist_ok=True)
-            with open(os.path.join(out_dir, "correlation_results.json"), "w", encoding="utf-8") as f:
-                json.dump(payload, f, indent=2)
-        except Exception:
-            pass
+    try:
+        os.makedirs(Config.OUTPUT_DIR, exist_ok=True)
+        with open(os.path.join(Config.OUTPUT_DIR, "correlation_results.json"), "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2)
+    except Exception:
+        pass
 
     # Generate enforcement artifacts
     try:
-        for out_dir in output_dirs:
-            generate_firewall_blocklist(results, output_dir=out_dir)
-            generate_firewall_rules(
-                blocklist_path=os.path.join(out_dir, "firewall_blocklist.csv"),
-                output_dir=out_dir,
-            )
-            generate_yara_rules(results, output_dir=out_dir)
-            generate_unmatched_records(results, output_dir=out_dir)
+        generate_firewall_blocklist(results, output_dir=Config.OUTPUT_DIR)
+        generate_firewall_rules(
+            blocklist_path=os.path.join(Config.OUTPUT_DIR, "firewall_blocklist.csv"),
+            output_dir=Config.OUTPUT_DIR,
+        )
+        generate_yara_rules(results, output_dir=Config.OUTPUT_DIR)
+        generate_unmatched_records(results, output_dir=Config.OUTPUT_DIR)
 
         local_matches = sum(1 for r in results if r.get("status") == "MATCH")
         score, level = calculate_risk(results, local_matches=local_matches)
@@ -98,13 +89,12 @@ def run_correlation(user_config: Optional[Dict[str, Any]] = None) -> Dict[str, A
 
 
 def load_correlation_results() -> Dict[str, Any]:
-    """Load correlation results from storage or legacy path."""
-    for out_dir in [Config.OUTPUT_DIR, Config.LEGACY_OUTPUT_DIR]:
-        path = os.path.join(out_dir, "correlation_results.json")
-        if os.path.exists(path):
-            try:
-                with open(path, "r", encoding="utf-8") as f:
-                    return json.load(f)
-            except Exception:
-                pass
+    """Load correlation results from storage."""
+    path = os.path.join(Config.OUTPUT_DIR, "correlation_results.json")
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
     return {}

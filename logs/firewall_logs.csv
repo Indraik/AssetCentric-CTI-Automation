@@ -1,2 +1,0 @@
-timestamp,src_ip,dst_ip,action,threat_match
-2026-09-08 10:00:00,198.51.100.25,192.168.1.10,ALLOW,MATCHED_THREAT_FEED

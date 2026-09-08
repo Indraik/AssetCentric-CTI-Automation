@@ -20,13 +20,4 @@ def generate_unmatched_records(
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(unmatched, f, indent=4)
 
-    # Legacy copy for compatibility
-    if target_dir != Config.LEGACY_OUTPUT_DIR:
-        try:
-            os.makedirs(Config.LEGACY_OUTPUT_DIR, exist_ok=True)
-            with open(os.path.join(Config.LEGACY_OUTPUT_DIR, filename), "w", encoding="utf-8") as f:
-                json.dump(unmatched, f, indent=4)
-        except Exception:
-            pass
-
     return output_path

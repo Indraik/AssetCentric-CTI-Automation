@@ -29,17 +29,4 @@ def generate_firewall_blocklist(
         for ip in sorted(firewall_ips):
             writer.writerow([ip, "Block"])
 
-    # Duplicate to legacy outputs if different for backward compatibility
-    if target_dir != Config.LEGACY_OUTPUT_DIR:
-        try:
-            os.makedirs(Config.LEGACY_OUTPUT_DIR, exist_ok=True)
-            legacy_path = os.path.join(Config.LEGACY_OUTPUT_DIR, filename)
-            with open(legacy_path, "w", newline="", encoding="utf-8") as f:
-                writer = csv.writer(f)
-                writer.writerow(["IP", "Action"])
-                for ip in sorted(firewall_ips):
-                    writer.writerow([ip, "Block"])
-        except Exception:
-            pass
-
     return output_path

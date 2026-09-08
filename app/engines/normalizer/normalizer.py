@@ -36,12 +36,8 @@ def normalize_feed(raw_feed_path: str = None, output_path: str = None) -> List[D
     logger.info("Normalizer | Starting normalization")
 
     if not os.path.exists(raw_path):
-        # Fallback check for legacy raw path
-        if os.path.exists(os.path.join(Config.LEGACY_DATA_DIR, "raw_threat_feed.json")):
-            raw_path = os.path.join(Config.LEGACY_DATA_DIR, "raw_threat_feed.json")
-        else:
-            logger.error(f"Normalizer | Raw feed not found at {raw_path}")
-            return []
+        logger.error(f"Normalizer | Raw feed not found at {raw_path}")
+        return []
 
     try:
         with open(raw_path, "r", encoding="utf-8") as f:

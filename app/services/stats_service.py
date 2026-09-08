@@ -51,12 +51,7 @@ def make_event(message: str) -> Dict[str, str]:
 def build_platform_stats() -> Dict[str, Any]:
     """Calculate platform statistics for the upload & overview pages."""
     norm_path = Config.NORMALIZED_FEED_PATH
-    if not os.path.exists(norm_path) and os.path.exists(os.path.join(Config.LEGACY_DATA_DIR, "normalized_threat_feed.json")):
-        norm_path = os.path.join(Config.LEGACY_DATA_DIR, "normalized_threat_feed.json")
-
     corr_path = os.path.join(Config.OUTPUT_DIR, "correlation_results.json")
-    if not os.path.exists(corr_path) and os.path.exists(os.path.join(Config.LEGACY_OUTPUT_DIR, "correlation_results.json")):
-        corr_path = os.path.join(Config.LEGACY_OUTPUT_DIR, "correlation_results.json")
 
     normalized = _safe_load_json(norm_path, [])
     correlation = _safe_load_json(corr_path, {})
@@ -76,20 +71,14 @@ def build_platform_stats() -> Dict[str, Any]:
     }
 
     uploads_expected = ["firewall.log", "firewall_logs.csv", "dns_logs.csv", "endpoint_logs.csv", "web.log"]
-    uploaded_files = []
-    for name in uploads_expected:
-        p1 = os.path.join(Config.UPLOAD_DIR, name)
-        p2 = os.path.join(Config.LEGACY_UPLOAD_DIR, name)
-        if os.path.exists(p1) or os.path.exists(p2):
-            uploaded_files.append(name)
+    uploaded_files = [
+        name for name in uploads_expected
+        if os.path.exists(os.path.join(Config.UPLOAD_DIR, name))
+    ]
 
     firewall_rows = _safe_load_csv(os.path.join(Config.UPLOAD_DIR, "firewall.log"))
     if not firewall_rows:
-        firewall_rows = _safe_load_csv(os.path.join(Config.LEGACY_UPLOAD_DIR, "firewall.log"))
-    if not firewall_rows:
         firewall_rows = _safe_load_csv(os.path.join(Config.UPLOAD_DIR, "firewall_logs.csv"))
-    if not firewall_rows:
-        firewall_rows = _safe_load_csv(os.path.join(Config.LEGACY_UPLOAD_DIR, "firewall_logs.csv"))
 
     preview_rows = []
     for row in firewall_rows[-3:]:
@@ -119,10 +108,8 @@ def build_platform_stats() -> Dict[str, Any]:
         reverse=True,
     )[:3]
 
-    blocklist_exists = os.path.exists(os.path.join(Config.OUTPUT_DIR, "firewall_blocklist.csv")) or \
-                       os.path.exists(os.path.join(Config.LEGACY_OUTPUT_DIR, "firewall_blocklist.csv"))
-    yara_exists = os.path.exists(os.path.join(Config.OUTPUT_DIR, "yara_rules.yar")) or \
-                  os.path.exists(os.path.join(Config.LEGACY_OUTPUT_DIR, "yara_rules.yar"))
+    blocklist_exists = os.path.exists(os.path.join(Config.OUTPUT_DIR, "firewall_blocklist.csv"))
+    yara_exists = os.path.exists(os.path.join(Config.OUTPUT_DIR, "yara_rules.yar"))
 
     return {
         "uploads": {
@@ -149,12 +136,7 @@ def build_platform_stats() -> Dict[str, Any]:
 def build_dashboard_live_stats() -> Dict[str, Any]:
     """Calculate live status metrics for the dashboard."""
     norm_path = Config.NORMALIZED_FEED_PATH
-    if not os.path.exists(norm_path) and os.path.exists(os.path.join(Config.LEGACY_DATA_DIR, "normalized_threat_feed.json")):
-        norm_path = os.path.join(Config.LEGACY_DATA_DIR, "normalized_threat_feed.json")
-
     corr_path = os.path.join(Config.OUTPUT_DIR, "correlation_results.json")
-    if not os.path.exists(corr_path) and os.path.exists(os.path.join(Config.LEGACY_OUTPUT_DIR, "correlation_results.json")):
-        corr_path = os.path.join(Config.LEGACY_OUTPUT_DIR, "correlation_results.json")
 
     indicators = _safe_load_json(norm_path, [])
     correlation_payload = _safe_load_json(corr_path, {})

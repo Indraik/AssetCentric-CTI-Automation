@@ -56,14 +56,12 @@ def run_pipeline() -> List[Dict[str, Any]]:
     logger.info(f"Threat Pipeline | Total raw indicators collected: {len(all_indicators)}")
 
     Config.init_directories()
-    raw_paths = [Config.RAW_FEED_PATH, os.path.join(Config.LEGACY_DATA_DIR, "raw_threat_feed.json")]
-    for rpath in raw_paths:
-        try:
-            os.makedirs(os.path.dirname(rpath), exist_ok=True)
-            with open(rpath, "w", encoding="utf-8") as f:
-                json.dump(all_indicators, f, indent=4)
-        except Exception as e:
-            logger.error(f"Threat Pipeline | Failed to save raw feed to {rpath} | {str(e)}")
+    try:
+        os.makedirs(os.path.dirname(Config.RAW_FEED_PATH), exist_ok=True)
+        with open(Config.RAW_FEED_PATH, "w", encoding="utf-8") as f:
+            json.dump(all_indicators, f, indent=4)
+    except Exception as e:
+        logger.error(f"Threat Pipeline | Failed to save raw feed to {Config.RAW_FEED_PATH} | {str(e)}")
 
     # Run normalization
     normalized = normalize_feed()

@@ -12,14 +12,6 @@ def generate_firewall_rules(
 ) -> str:
     """Generate firewall rules based on the firewall blocklist CSV."""
     target_blocklist = blocklist_path or os.path.join(Config.OUTPUT_DIR, "firewall_blocklist.csv")
-    if not os.path.exists(target_blocklist):
-        # Fallback to legacy blocklist
-        fallback = os.path.join(Config.LEGACY_OUTPUT_DIR, "firewall_blocklist.csv")
-        if os.path.exists(fallback):
-            target_blocklist = fallback
-        else:
-            target_blocklist = None
-
     target_dir = output_dir or Config.OUTPUT_DIR
     os.makedirs(target_dir, exist_ok=True)
     output_path = os.path.join(target_dir, filename)
@@ -36,14 +28,5 @@ def generate_firewall_rules(
 
     with open(output_path, "w", encoding="utf-8") as log_file:
         log_file.writelines(rules)
-
-    # Legacy copy for compatibility
-    if target_dir != Config.LEGACY_OUTPUT_DIR:
-        try:
-            os.makedirs(Config.LEGACY_OUTPUT_DIR, exist_ok=True)
-            with open(os.path.join(Config.LEGACY_OUTPUT_DIR, filename), "w", encoding="utf-8") as f:
-                f.writelines(rules)
-        except Exception:
-            pass
 
     return output_path

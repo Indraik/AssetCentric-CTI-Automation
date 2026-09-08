@@ -15,11 +15,6 @@ class Config:
     OUTPUT_DIR = os.path.join(STORAGE_DIR, "outputs")
     LOG_DIR = os.path.join(STORAGE_DIR, "logs")
 
-    # Fallback/Legacy Paths (for backward compatibility)
-    LEGACY_DATA_DIR = os.path.join(ROOT_DIR, "data")
-    LEGACY_UPLOAD_DIR = os.path.join(ROOT_DIR, "uploads")
-    LEGACY_OUTPUT_DIR = os.path.join(ROOT_DIR, "outputs")
-    LEGACY_LOG_DIR = os.path.join(ROOT_DIR, "logs")
 
     # Data File Paths
     RAW_FEED_PATH = os.path.join(DATA_DIR, "raw_threat_feed.json")
